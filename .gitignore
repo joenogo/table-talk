@@ -1,0 +1,6 @@
+.claude/
+__pycache__/
+.DS_Store
+mockups.html
+mockup-data.json
+demo.html
