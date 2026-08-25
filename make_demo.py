@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates demo.html — the same page as site/index.html, but fed a fabricated
+Generates demo.html — the same page as docs/index.html, but fed a fabricated
 season instead of ESPN.
 
 Simulates a full 38-round fixture list, plays out the first 24 rounds, and

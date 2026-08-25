@@ -1,7 +1,7 @@
 # THE NOGOSEK PREMIERSHIP
 
 A public scoreboard for the eleven-way Premier League table prediction league.
-`site/index.html` is the whole website — one file, no backend, no build step,
+`docs/index.html` is the whole website — one file, no backend, no build step,
 no account, no dependency on Claude or on your laptop being awake.
 
 ## How the live updating works
@@ -114,7 +114,7 @@ the tab is in the background.
 The Premier League lion, cropped out of the full logo lockup (the wordmark is
 illegible at 16px). `art/crest96.png` is composited onto an opaque paper square
 inside an SVG wrapper and inlined as a data URI, so it reads on a dark browser
-tab as well as a light one. `art/crest180.png` is copied to `site/favicon.png`
+tab as well as a light one. `art/crest180.png` is copied to `docs/favicon.png`
 at build time as a fallback and as the Apple touch icon — so if you upload only
 `index.html`, the inline SVG still works on its own.
 
@@ -162,7 +162,7 @@ The site is one static file, so any static host works. Two good routes:
 
 ### GitHub Pages (durable, versioned)
 
-1. New repo → upload `site/index.html` to the root.
+1. New repo → upload `docs/index.html` to the root.
 2. **Settings → Pages** → deploy from `main` / root.
 3. **Settings → Pages → Custom domain** → `pl.joenogosek.com`.
 
@@ -190,7 +190,7 @@ them, edit `premier-league-predictions-2026-27.csv` and regenerate:
 python3 make.py
 ```
 
-Then re-upload `site/index.html`. The script refuses to build if anyone's
+Then re-upload `docs/index.html`. The script refuses to build if anyone's
 column isn't exactly the 20 clubs in the league, so a typo fails loudly
 instead of silently scoring someone wrong.
 
@@ -210,7 +210,7 @@ real data. Regenerate with `python3 make_demo.py`.
 python3 -m http.server 8792 --directory site
 ```
 
-Opening `site/index.html` by double-clicking also works — ESPN allows it.
+Opening `docs/index.html` by double-clicking also works — ESPN allows it.
 
 ## Worth checking during the first live match
 
@@ -227,8 +227,8 @@ double-counted it self-corrects at full time; the fix would be one line in
 |---|---|
 | `premier-league-predictions-2026-27.csv` | The eight sets of picks. The source of truth. |
 | `make.py` | Injects the picks into the page. Only needed if picks change. |
-| `site/index.html` | The website. This is the thing you upload. |
-| `site/favicon.png` | Generated fallback icon. Upload alongside it if you can. |
+| `docs/index.html` | The website. This is the thing you upload. |
+| `docs/favicon.png` | Generated fallback icon. Upload alongside it if you can. |
 | `audio/crowd.m4a` | Crowd sample, embedded at build time. |
 | `badges/` | 20 club badges, embedded into the build. |
 | `art/` | The Premier League lion, used for the favicon. |

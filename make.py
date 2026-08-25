@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates site/index.html — a standalone page, no build step, no backend.
+Generates docs/index.html — a standalone page, no build step, no backend.
 
 The page pulls live Premier League data straight from ESPN's public JSON API
 in the browser (that API sends `access-control-allow-origin: *`, so no proxy
@@ -21,7 +21,7 @@ from _skins import SKINS
 
 HERE = pathlib.Path(__file__).parent
 CSV_PATH = HERE / "premier-league-predictions-2026-27.csv"
-SITE = HERE / "site"
+SITE = HERE / "docs"
 AUDIO = HERE / "audio"     # embedded so each page stays a single file
 BADGE_DIR = HERE / "badges"
 ART = HERE / "art"          # the Premier League lion, cropped out of the full lockup
@@ -209,7 +209,7 @@ def build():
         fallback = ART / "crest180.png"
         if fallback.exists():
             (SITE / "favicon.png").write_bytes(fallback.read_bytes())
-        print(f"  {skin:<10} -> site/{cfg['out']:<16} {len(html):>9,} bytes"
+        print(f"  {skin:<10} -> docs/{cfg['out']:<16} {len(html):>9,} bytes"
               f"  badges={'yes' if cfg['badges'] else 'no'}")
 TEMPLATE = r"""<!doctype html>
 <html lang="en">
