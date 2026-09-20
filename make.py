@@ -759,8 +759,10 @@ __SKIN_CSS__
   var BADGE   = __BADGES__;          /* club -> data URI, or {} when the skin has none */
 
   var STANDINGS = "https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings";
-  var SCORES    = "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=";
-  var SEASON    = "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?limit=500&dates=20260801-20270601";
+  var SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard";
+  /* the season we score, as inclusive UTC bounds */
+  var SEASON_FROM = Date.UTC(2026, 7, 1);                    /* 1 Aug 2026 */
+  var SEASON_TO   = Date.UTC(2027, 5, 1, 23, 59, 59, 999);   /* 1 Jun 2027 */
 
   var NAMES = Object.keys(PRED).sort();
   var CLUBS = Object.keys(SHORT);
@@ -2151,10 +2153,50 @@ __SKIN_CSS__
   }
 
   /* ---------- fetching ---------- */
-  function windowDates() {
-    function f(d) { return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()); }
-    var now = Date.now();
-    return f(new Date(now - 3 * 864e5)) + "-" + f(new Date(now + 4 * 864e5));
+  /* ESPN used to accept dates=YYYYMMDD-YYYYMMDD here. It now answers every
+     such range with HTTP 400 — any span, any league — and because the
+     scoreboard call shares a Promise.all with the standings call, that one
+     400 took the entire page offline behind "CAN'T REACH THE SCOREBOARD"
+     even though standings were answering fine.
+
+     Single days, dates=YYYYMM and dates=YYYY still work. So ask for the
+     whole months (or years) a window touches and trim to the window here.
+     limit=500 is load-bearing on the year form: without it ESPN truncates
+     the response at 100 events, which silently loses most of a season. */
+  function liveWindow() {
+    var a = new Date(Date.now() - 3 * 864e5), b = new Date(Date.now() + 4 * 864e5);
+    return [Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()),
+            Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(), 23, 59, 59, 999)];
+  }
+  function buckets(from, to, byYear) {
+    var a = new Date(from), b = new Date(to), out = [];
+    if (byYear) {
+      for (var y = a.getUTCFullYear(); y <= b.getUTCFullYear(); y++) out.push(String(y));
+      return out;
+    }
+    var cy = a.getUTCFullYear(), cm = a.getUTCMonth();
+    var ey = b.getUTCFullYear(), em = b.getUTCMonth();
+    while (cy < ey || (cy === ey && cm <= em)) {
+      out.push(String(cy) + pad(cm + 1));
+      if (++cm > 11) { cm = 0; cy++; }
+    }
+    return out;
+  }
+  function grabRange(from, to, byYear) {
+    return Promise.all(buckets(from, to, byYear).map(function (b) {
+      return grab(SCOREBOARD + "?limit=500&dates=" + b);
+    })).then(function (parts) {
+      var seen = {}, events = [];
+      parts.forEach(function (p) {
+        ((p && p.events) || []).forEach(function (e) {
+          var t = Date.parse(e.date);
+          if (seen[e.id] || !(t >= from && t <= to)) return;
+          seen[e.id] = 1;
+          events.push(e);
+        });
+      });
+      return { events: events };
+    });
   }
   function grab(url) {
     return fetch(url, { cache: "no-store" }).then(function (r) {
@@ -2165,7 +2207,7 @@ __SKIN_CSS__
   function loadSeason(list) {
     if (seasonTried) return;
     seasonTried = true;
-    grab(SEASON).then(function (j) {
+    grabRange(SEASON_FROM, SEASON_TO, true).then(function (j) {
       seasonFixtures = parseMatches(j);
       renderRace(buildHistory(seasonFixtures));
       runOdds(list, seasonFixtures);
@@ -2215,7 +2257,8 @@ __SKIN_CSS__
   /* ---------- poll loop ---------- */
   function cycle() {
     setStatus("REFRESHING…");
-    Promise.all([grab(STANDINGS), grab(SCORES + windowDates())])
+    var win = liveWindow();
+    Promise.all([grab(STANDINGS), grabRange(win[0], win[1], false)])
       .then(function (res) {
         var rows = parseStandings(res[0]);
         var matches = parseMatches(res[1]);
